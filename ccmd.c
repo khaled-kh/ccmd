@@ -7,7 +7,7 @@
  ccmd: a bash terminal utility for custom commands
  Copyright (C) 2012  Khaled Abdullah Khunaifer
  
- Version: 0.1 BETA
+ Version: 0.3 BETA
  
  This program is free software: you can redistribute it and/or modify
  it under the terms of the GNU General Public License as published by
@@ -27,7 +27,7 @@
 // developement notes:
 // File: ~/.ccmd
 // structure: every line is a custom command line
-// line: |alias <ccmd> = "<cmd>";|
+// line: |alias <ccmd>="<cmd>";|
 
 // add ccmd, as an alias for cmd
 void add (char * ccmd, char * cmd)
@@ -37,7 +37,7 @@ void add (char * ccmd, char * cmd)
 	
 	if ( file != NULL )
 	{
-		fprintf(file, "alias %s = \"%s\";\n", ccmd, cmd);
+		fprintf(file, "alias %s=\"%s\";\n", ccmd, cmd);
 		
 		// Close file
 		fclose ( file );
@@ -74,98 +74,9 @@ int lines(char * filename)
 	return lines;
 }
 
-// -------------------------------------
-
-// remove ccmd from the list
-void rem (char * c)
-{
-	// Open ccmd file
-	FILE * file = fopen ( "~/.ccmd", "r" );
-	
-	L = lines("~/.ccmd");
-	char *** M = malloc (sizeof (char**) * L);
-	for (int i=0; i<L; i++) M[i] = malloc (sizeof (char*) * 2);
-	
-	// parse into matrix
-	if ( file != NULL )
-	{
-		char line [4096] = "";
-		char * line2 = 0;
-		char * ccmd = 0;
-		char * cmd = 0;
-		
-		int i = 0;
-		while ( fgets ( line, sizeof line, file ) != NULL )
-		{
-			line2 = strstr(line, " "); // pass: |alias |
-			ccmd = substr(line2, 1, first(line2,'=')-1); // get: |<ccmd>|
-			line2 = strstr(line2, "\""); // pass: |<ccmd> = |
-			cmd  = substr(line2, 1, last(line2,'\"')); // get: |<cmd>|
-			
-			M[i][0] = strcpy(ccmd);
-			M[i][1] = strcpy(cmd);
-			
-			i++;
-		}
-		
-		// Close file
-		fclose ( file );
-	}
-	else
-	{
-		// error
-		printf(" Error: an error occured reading ccmd file \n");
-		return;
-	}
-	
-	// overwrite ccmd, without marked commands
-	
-	file = fopen ( "~/t.txt", "w" );
-	
-	if ( file != NULL )
-	{
-		int i = 0;
-		
-		while ( i < L )
-		{
-			if (M[i][0] == c)
-			{
-				fprintf(file, "alias %s = \"%s\";\n", M[i][0], M[i][1]);
-			}
-			i++;
-		}
-		
-		// Close temp file
-		fclose ( file );
-		
-		// replace original with temp
-		if (remove("~/.ccmd") == 0)
-		{
-			if (rename("~/t.txt", "~/.ccmd") != 0)
-			{
-				printf("Error: new ccmd couldn't be placed, check t file");
-				return;
-			}
-		}
-		else
-		{
-			printf("Error: old ccmd file couldn't be deleted");
-			return;
-		}
-	}
-	else
-	{
-		// error
-		printf(" Error: an error occured reading ccmd file \n");
-		return;
-	}
-	
-	printf("\n Custom command removed successfully \n\n");
-}
-
 // ------------------------------------------
 
-char * substr (char * str, int start, int end)
+char * substr2 (char * str, int start, int end)
 {
 	// trace: printf("substr('%s', %d, %d) \n",str,start,end);
 	if ((end-start) < 1) return 0;
@@ -207,6 +118,96 @@ int last (char * str, char ch)
 
 // ------------------------------------------
 
+// remove ccmd from the list
+void rem (char * c)
+{
+	// Open ccmd file
+	FILE * file = fopen ( "~/.ccmd", "r" );
+	
+	int i = 0;
+	int L = lines("~/.ccmd");
+	char *** M = malloc (sizeof (char**) * L);
+	for (i = 0; i < L; i++) M[i] = malloc (sizeof (char*) * 2);
+	
+	// parse into matrix
+	if ( file != NULL )
+	{
+		char line [4096] = "";
+		char * line2 = 0;
+		char * ccmd = 0;
+		char * cmd = 0;
+		
+		while ( fgets ( line, sizeof line, file ) != NULL )
+		{
+			line2 = strstr(line, " "); // pass: |alias |
+			ccmd = substr2(line2, 1, first(line2,'=')-1); // get: |<ccmd>|
+			line2 = strstr(line2, "\""); // pass: |<ccmd>=|
+			cmd  = substr2(line2, 1, last(line2,'\"')); // get: |<cmd>|
+			
+			// a recored is 2048 Bytes, 2KB
+			M[i][0] = malloc (sizeof (char) * 512);
+			strcpy(M[i][0], ccmd);
+			M[i][1] = malloc (sizeof (char) * 1536);
+			strcpy(M[i][1], cmd);
+			
+			i++;
+		}
+		
+		// Close file
+		fclose ( file );
+	}
+	else
+	{
+		// error
+		printf(" Error: an error occured reading ccmd file \n");
+		return;
+	}
+	
+	// overwrite ccmd, without marked commands
+	
+	file = fopen ( "~/t.txt", "w" );
+	
+	if ( file != NULL )
+	{
+		int i = 0;
+		
+		while ( i < L )
+		{
+			if (M[i][0] == c)
+			{
+				fprintf(file, "alias %s=\"%s\";\n", M[i][0], M[i][1]);
+			}
+			i++;
+		}
+		
+		// Close temp file
+		fclose ( file );
+		
+		// replace original with temp
+		if (remove("~/.ccmd") == 0)
+		{
+			if (rename("~/t.txt", "~/.ccmd") != 0)
+			{
+				printf("Error: new ccmd couldn't be placed, check t file");
+				return;
+			}
+		}
+		else
+		{
+			printf("Error: old ccmd file couldn't be deleted");
+			return;
+		}
+	}
+	else
+	{
+		// error
+		printf(" Error: an error occured reading ccmd file \n");
+		return;
+	}
+	
+	printf("\n Custom command removed successfully \n\n");
+}
+
 // print list of ccmd's
 void list ()
 {
@@ -224,9 +225,9 @@ void list ()
 		while ( fgets ( line, sizeof line, file ) != NULL )
 		{
 			line2 = strstr(line, " "); // pass: |alias |
-			ccmd = substr(line2, 1, first(line2,'=')-1); // get: |<ccmd>|
-			line2 = strstr(line2, "\""); // pass: |<ccmd> = |
-			cmd  = substr(line2, 1, last(line2,'\"')); // get: |<cmd>|
+			ccmd = substr2(line2, 1, first(line2,'=')-1); // get: |<ccmd>|
+			line2 = strstr(line2, "\""); // pass: |<ccmd>=|
+			cmd  = substr2(line2, 1, last(line2,'\"')); // get: |<cmd>|
 			
 			printf ("%s : %s \n", ccmd, cmd);
 		}
@@ -275,7 +276,7 @@ void install ()
 // print general info, and use
 void help ()
 {
-	printf("\n Custom Command Utility \n\n Use: ccmd -option <operand> \n\n Options: -a(dd) -r(emove) -l(ist) -i(nstall) -h(elp)\n\n note: in case of -i(nstall), you need to use sudo [ sudo ccmd -i ]\n\n");
+	printf("\n Custom Command Utility \n\n Use: ccmd -option <operand> \n\n Options: -a(dd) -r(emove) -l(ist) -i(nstall) -h(elp) -L(icense)\n\n note: in case of -i(nstall), you need to use sudo [ sudo ccmd -i ]\n\n");
 }
 
 void license ()

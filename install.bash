@@ -1,5 +1,5 @@
 #/bin/bash
-# This script install ccmd, you need root privilages
+# This script install ccmd, requires root privilages
 # Run: sudo ./install.bash
 
 # 1. create empty .ccmd file at home directory

@@ -6,7 +6,7 @@
 
 		Email: 3eeqeel@gmail.com
 
-		Version: 0.1 BETA
+		Version: 0.3 BETA
 
 
 	Use:
@@ -21,4 +21,6 @@
 		ccmd -a <custom cmd> <cmd> : set an alias
 
 		ccmd -r <custom cmd> : remove an alias
+
+		ccmd -L : License info
 
